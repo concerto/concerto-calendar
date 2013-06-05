@@ -1,8 +1,12 @@
 <dl>
-  <dt>URL</dt>
-  <dd><%= content.config['url'] %></dd>
+  <dt>Calendar</dt>
+  <dd><%= content.config['calendar_id'] %></dd>
   <dt>Format</dt>
   <dd><%= content.config['output_format'].titleize %></dd>
+  <dt>Days Ahead</dt>
+  <dd><%= content.config['days_ahead'] %></dd>
+  <dt>Maximum Results</dt>
+  <dd><%= content.config['max_results'] %></dd>
   <dt>Last Successful Update</dt>
   <dd><%= content.config.include?('last_ok_refresh') ? Time.at(content.config['last_ok_refresh']).strftime('%c') : 'Never' %></dd>
   <dt>Last Attempted Update</dt>

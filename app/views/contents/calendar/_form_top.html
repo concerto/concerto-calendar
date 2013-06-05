@@ -1,0 +1,39 @@
+<fieldset>
+  <legend><span>Calendar</span></legend>
+  <%= form.fields_for :config do |config| %>
+    <div class="clearfix">
+      <%= config.label :api_key %>
+      <div class="input">
+        <%= config.text_field :api_key, :placeholder => 'your secret API key from Google API Console', :class => "input-xxlarge", :value => @content.config['api_key'] %>
+      </div>
+    </div>
+
+    <div class="clearfix">
+      <%= config.label :calendar_id %>
+      <div class="input">
+        <%= config.text_field :calendar_id, :placeholder => 'office@soldotnabiblechapel.com', :class => "input-xlarge", :value => @content.config['calendar_id'] %>
+      </div>
+    </div>
+
+    <div class="clearfix">
+      <%= config.label :max_results %>
+      <div class="input">
+        <%= config.number_field :max_results, :class => "input-small", :value => @content.config['max_results'] %>
+      </div>
+    </div>
+
+    <div class="clearfix">
+      <%= config.label :days_ahead %>
+      <div class="input">
+        <%= config.number_field :days_ahead, :class => "input-small", :value => @content.config['days_ahead'] %>
+      </div>
+    </div>
+
+    <div class="clearfix">
+      <%= config.label :output_format, 'Display Format' %>
+      <div class="input">
+        <%= config.select :output_format, [["Headlines (Multiple)", "headlines"], ["Details (Single)", "detailed"]], :selected => @content.config['output_format'] %>
+      </div>
+    </div>
+  <% end %>
+</fieldset>

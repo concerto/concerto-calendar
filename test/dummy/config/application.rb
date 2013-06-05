@@ -3,7 +3,7 @@ require File.expand_path('../boot', __FILE__)
 require 'rails/all'
 
 Bundler.require
-require "c2_simple_rss"
+require "c2_calendar"
 
 module Dummy
   class Application < Rails::Application

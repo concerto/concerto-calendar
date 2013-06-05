@@ -1,4 +1,4 @@
 Rails.application.routes.draw do
 
-  mount ConcertoSimpleRss::Engine => "/concerto_simple_rss"
+  mount ConcertoCalendar::Engine => "/concerto_calendar"
 end

@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-# Declare your gem's dependencies in c2_simple_rss.gemspec.
+# Declare your gem's dependencies in concerto_calendar.gemspec.
 # Bundler will treat runtime dependencies like base dependencies, and
 # development dependencies will be added by default to the :development group.
 gemspec

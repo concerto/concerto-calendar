@@ -1,1 +1,1 @@
-Dummy::Application.config.content_types = [SimpleRss]
+Dummy::Application.config.content_types = [Calendar]
