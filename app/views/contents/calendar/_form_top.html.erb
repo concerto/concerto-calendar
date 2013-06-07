@@ -11,7 +11,7 @@
     <div class="clearfix">
       <%= config.label :calendar_id %>
       <div class="input">
-        <%= config.text_field :calendar_id, :placeholder => 'office@soldotnabiblechapel.com', :class => "input-xlarge", :value => @content.config['calendar_id'] %>
+        <%= config.text_field :calendar_id, :placeholder => 'office@soldotnabiblechapel.com', :class => "input-xlarge required", :value => @content.config['calendar_id'] %>
       </div>
     </div>
 
@@ -30,9 +30,25 @@
     </div>
 
     <div class="clearfix">
+      <%= config.label :day_format %>
+      <div class="input">
+        <%= config.text_field :day_format, :placeholder => '%A %b %e', :class => "input-medium", :value => @content.config['day_format'] %>
+        <div><i>use <a href="http://www.ruby-doc.org/core-2.0/Time.html#method-i-strftime" target="_blank">strftime format</a> specifiers</i></div>
+      </div>
+    </div>
+
+    <div class="clearfix">
+      <%= config.label :time_format %>
+      <div class="input">
+        <%= config.text_field :time_format, :placeholder => '%l:%M %P', :class => "input-medium", :value => @content.config['time_format'] %>
+        <div><i>use <a href="http://www.ruby-doc.org/core-2.0/Time.html#method-i-strftime" target="_blank">strftime format</a> specifiers</i></div>
+      </div>
+    </div>
+
+    <div class="clearfix">
       <%= config.label :output_format, 'Display Format' %>
       <div class="input">
-        <%= config.select :output_format, [["Headlines (Multiple)", "headlines"], ["Details (Single)", "detailed"]], :selected => @content.config['output_format'] %>
+        <%= config.select :output_format, Calendar::DISPLAY_FORMATS, :selected => @content.config['output_format'] %>
       </div>
     </div>
   <% end %>
