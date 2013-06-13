@@ -1,5 +1,5 @@
 class Calendar < DynamicContent
-  after_initialize :set_defaults
+  after_initialize :set_defaults, :on => :new
   validate :validate_config, :on => :create
 
   # this is the common class used for holding the content to be rendered
@@ -46,9 +46,10 @@ class Calendar < DynamicContent
   }  
 
   def set_defaults
-    self.config['calendar_source'] = 'ical'
-    self.config['day_format'] = '%A %b %e'
-    self.config['time_format'] = '%l:%M %P'
+    self.config['calendar_source'] ||= 'ical'
+    self.config['day_format'] ||= '%A %b %e'
+    self.config['time_format'] ||= '%l:%M %P'
+    self.config['max_results'] ||= 10
   end
 
   def build_content
@@ -255,11 +256,15 @@ class Calendar < DynamicContent
     # if self.config['api_key'].blank?
     #   errors.add(:config_api_key, "can't be blank")
     # end
+
+    prerequisites_met = true
     if self.config['calendar_id'].blank? && self.config['calendar_source'] == "google"
       errors.add(:config_calendar_id, "can't be blank")
+      prerequisites_met = false
     end
     if self.config['calendar_url'].blank? && self.config['calendar_source'] != "google"
       errors.add(:config_calendar_url, "can't be blank")
+      prerequisites_met = false
     end
     if self.config['max_results'].blank? 
       errors.add(:config_max_results, "can't be blank")
@@ -267,6 +272,13 @@ class Calendar < DynamicContent
     # if self.config['days_ahead'].blank?  && self.config['end_date'].blank? 
     #   errors.add(:config_days_ahead, "days ahead or end_date must be specified")
     # end
+    if !self.config['start_date'].blank? && !self.config['end_date'].blank?
+      start_date = self.config['start_date'].to_date
+      end_date = self.config['end_date'].to_date
+      if start_date > end_date
+        errors.add(:config_start_date, "must precede end date")
+      end
+    end
     if !CALENDAR_SOURCES.values.include?(self.config['calendar_source'])
       errors.add(:config_calendar_source, "must be #{CALENDAR_SOURCES.keys.join(' or ')}")
     end
@@ -279,7 +291,7 @@ class Calendar < DynamicContent
       validate_request #if !self.config['api_key'].blank?
     rescue => e
       errors.add(:base, "Could not fetch calendar - #{e.message}")
-    end
+    end if prerequisites_met
   end
 
   # make sure the request is valid by fetching a result back

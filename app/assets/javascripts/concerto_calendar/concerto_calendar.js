@@ -15,6 +15,9 @@ function attachHandlers() {
   }
 
   revealRelevantFields();
+
+  $("input#calendar_config_start_date.datefield").datepicker();
+  $("input#calendar_config_end_date.datefield").datepicker();
 }
 
 $(document).ready(attachHandlers);
