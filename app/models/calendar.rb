@@ -1,7 +1,9 @@
 class Calendar < DynamicContent
-  after_initialize :set_ical
+  after_initialize :set_defaults
   validate :validate_config, :on => :create
 
+  # this is the common class used for holding the content to be rendered
+  # it is populated from the various calendar sources
   class CalendarResults
     class CalendarResultItem
       attr_accessor :name, :description, :location, :start_time, :end_time
@@ -43,8 +45,10 @@ class Calendar < DynamicContent
 #    "Bedework JSON" => "bedeworkjson" 
   }  
 
-  def set_ical
+  def set_defaults
     self.config['calendar_source'] = 'ical'
+    self.config['day_format'] = '%A %b %e'
+    self.config['time_format'] = '%l:%M %P'
   end
 
   def build_content
@@ -152,6 +156,8 @@ class Calendar < DynamicContent
       end
     when 'ical'
         # ---------------------------------- iCal calendar 
+        # need to filter manually below because the url may not accommodate filtering
+        # so respect self.config[max_results] and start_date and end_date (which incorporates the days ahead)
         require 'open-uri'
         require 'icalendar'
 
@@ -161,17 +167,22 @@ class Calendar < DynamicContent
           open(URI.parse(url)) do |cal|
             calendars = Icalendar.parse(cal)
           end
-          result.name =  self.name # there isnt any: calendars.first.summary
+
+          max_results = self.config['max_results'].to_i
+          result.name =  self.name    # iCal doesn't provide a calendar name, so use the user's provided name
           calendars.first.events.each do |item|
-# need to filter in here because their url might not
-# so respect self.config[max_results] and start_date and end_date (which incorporates the days ahead)
             title = item.summary
             description = item.description
             location = item.location
-            start_time = item.dtstart.to_time unless item.dtstart.nil?
-            end_time = item.dtend.to_time unless item.dtend.nil?
-            result.add_item(title, description, location, start_time, end_time)
+            item_start_time = item.dtstart.to_time unless item.dtstart.nil?
+            item_end_time = item.dtend.to_time unless item.dtend.nil?
+            # make sure the item's start date is within the specified range
+            if item_start_time >= start_date && item_start_time < end_date
+              result.add_item(title, description, location, item_start_time, item_end_time)
+            end
           end
+          result.items.sort! { |a, b| a.start_time <=> b.start_time }
+          result.items = result.items[0..max_results]
         rescue => e
           result.error_message = e.message
         end

@@ -1,10 +1,22 @@
 <dl>
   <dt>Calendar</dt>
-  <dd><%= content.config['calendar_id'] %></dd>
+  <dd>
+    <%= Calendar::CALENDAR_SOURCES.key(content.config['calendar_source']) + " " +
+    case content.config['calendar_source'] 
+    when 'google' 
+      content.config['calendar_id'] 
+    else
+      content.config['calendar_url'] 
+    end %>
+  </dd>
   <dt>Format</dt>
   <dd><%= content.config['output_format'].titleize %></dd>
   <dt>Days Ahead</dt>
   <dd><%= content.config['days_ahead'] %></dd>
+  <dt>Start Date</dt>
+  <dd><%= content.config['start_date'] %></dd>
+  <dt>End Date</dt>
+  <dd><%= content.config['end_date'] %></dd>
   <dt>Maximum Results</dt>
   <dd><%= content.config['max_results'] %></dd>
   <dt>Last Successful Update</dt>
