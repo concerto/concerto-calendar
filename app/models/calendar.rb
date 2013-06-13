@@ -1,4 +1,7 @@
 class Calendar < DynamicContent
+  after_initialize :set_ical
+  validate :validate_config, :on => :create
+
   class CalendarResults
     class CalendarResultItem
       attr_accessor :name, :description, :location, :start_time, :end_time
@@ -25,8 +28,7 @@ class Calendar < DynamicContent
     end
 
     def add_item(name, description, location, start_time, end_time)
-      z = CalendarResultItem.new(name, description, location, start_time, end_time)
-      self.items << z
+      self.items << CalendarResultItem.new(name, description, location, start_time, end_time)
     end
   end
 
@@ -41,7 +43,9 @@ class Calendar < DynamicContent
 #    "Bedework JSON" => "bedeworkjson" 
   }  
 
-  validate :validate_config
+  def set_ical
+    self.config['calendar_source'] = 'ical'
+  end
 
   def build_content
     contents = []
