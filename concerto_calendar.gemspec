@@ -12,6 +12,7 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/concerto/concerto-calendar/"
   s.summary     = "Calendar Content for Concerto 2."
   s.description = "Simple support to render google calendar v2/v3 or iCal content in Concerto 2."
+  s.license     = 'Apache 2.0'
 
   s.files = Dir["{app,config,db,lib,public}/**/*"] + ["LICENSE", "Rakefile", "README.md"]
   s.test_files = Dir["test/**/*"]
