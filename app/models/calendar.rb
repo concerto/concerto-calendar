@@ -183,7 +183,7 @@ class Calendar < DynamicContent
             end
           end
           result.items.sort! { |a, b| a.start_time <=> b.start_time }
-          result.items = result.items[0..max_results]
+          result.items = result.items[0..(max_results -1)]
         rescue => e
           result.error_message = e.message
         end
