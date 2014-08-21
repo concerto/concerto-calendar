@@ -21,5 +21,4 @@ Gem::Specification.new do |s|
   s.add_dependency "google-api-client"
   s.add_dependency "icalendar"
 
-  s.add_development_dependency "sqlite3"
 end
