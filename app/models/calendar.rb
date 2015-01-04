@@ -34,7 +34,6 @@ class Calendar < DynamicContent
     end
   end
 
-  DISPLAY_NAME = 'Calendar'
   DISPLAY_FORMATS = { 
     "List (Multiple)" => "headlines", 
     "Detailed (Single)" => "detailed" 
