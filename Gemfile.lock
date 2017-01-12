@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     concerto_calendar (0.0.1)
-      google-api-client
+      google-api-client (~> 0.9.1)
       rails (~> 3.2.11)
 
 GEM
