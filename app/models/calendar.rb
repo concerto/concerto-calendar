@@ -145,12 +145,23 @@ class Calendar < DynamicContent
             title = item.summary
             description = item.description
             location = item.location
-            item_start_time = item.dtstart.to_time unless item.dtstart.nil?
-            item_end_time = item.dtend.to_time unless item.dtend.nil?
+            # behave a little differently depending on whether or not our iCal has a timezone defined
+            # this behavior is somewhat lazy/sloppy in that we're assuming the existence of a defined timezone means
+            # that times are local ('correct'), whereas the absence of a timezone means the data is
+            # likely in UTC/Zulu time
+            if calendars.first.has_timezone?
+              item_start_time = item.dtstart.to_datetime unless item.dtstart.nil?
+              item_end_time = item.dtend.to_datetime unless item.dtend.nil?
+            else
+              item_start_time = Time.zone.parse(item.dtstart.to_s).to_datetime unless item.dtstart.nil?
+              item_end_time = Time.zone.parse(item.dtend.to_s).to_datetime unless item.dtend.nil?
+            end
+            item_end_time = nil if item_end_time == item_start_time
             # make sure the item's start date is within the specified range
             if item_start_time >= start_date && item_start_time < end_date
               result.add_item(title, description, location, item_start_time, item_end_time)
             end
+
           end
           result.items.sort! { |a, b| a.start_time <=> b.start_time }
           result.items = result.items[0..(max_results -1)]
@@ -171,7 +182,7 @@ class Calendar < DynamicContent
     html = []
     html << "<h1>#{item.name}</h1>"
     html << "<h2>#{item.start_time.strftime(day_format)}</h2>" 
-    html << (end_time.nil? ? "<div class=\"cal-time\">#{start_time}</div>" : "<div class=\"cal-time\">#{start_time} - #{end_time}</div>") unless start_time == end_time
+    html << (end_time.nil? || start_time == end_time ? "<div class=\"cal-time\">#{start_time}</div>" : "<div class=\"cal-time\">#{start_time} - #{end_time}</div>")
     html << "<div class=\"cal-location\">#{item.location}</div>"
     html << "<p>#{item.description}</p>"
     return html.join("")
@@ -196,7 +207,7 @@ class Calendar < DynamicContent
       start_time = item.start_time.strftime(time_format)
       end_time = item.end_time.strftime(time_format) unless item.end_time.nil?
 
-      html << (end_time.nil? ? "<dt>#{start_time}</dt>" : "<dt>#{start_time} - #{end_time}</dt>") unless start_time == end_time
+      html << (end_time.nil? || start_time == end_time ? "<dt>#{start_time}</dt>" : "<dt>#{start_time} - #{end_time}</dt>")
       # if the item we're evaluating isn't a DateTime, it's a full-day event
       html << (item.start_time.is_a?(DateTime) ? "" : "<dt>Time N/A</dt>")
       html << "<dd>#{item.name}</dd>"
