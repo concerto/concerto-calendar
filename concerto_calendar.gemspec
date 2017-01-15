@@ -18,7 +18,7 @@ Gem::Specification.new do |s|
   s.test_files = Dir["test/**/*"]
 
   s.add_dependency "rails"
-  s.add_dependency "google-api-client"
+  s.add_dependency "google-api-client", "~> 0.9"
   s.add_dependency "icalendar"
 
 end

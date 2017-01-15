@@ -49,6 +49,7 @@ class Calendar < DynamicContent
     self.config['day_format'] ||= '%A %b %e'
     self.config['time_format'] ||= '%l:%M %P'
     self.config['max_results'] ||= 10
+    self.config['days_ahead'] ||= 7
   end
 
   def build_content
@@ -90,67 +91,37 @@ class Calendar < DynamicContent
     calendar_id = self.config['calendar_id']
     calendar_source = self.config['calendar_source']
     start_date = self.config['start_date'].strip.empty? ? Clock.time.beginning_of_day.iso8601 : self.config['start_date'].to_time.beginning_of_day.iso8601
+    # end_date is not used by the google api, as the resulting behavior is unexpected
     end_date = self.config['end_date'].strip.empty? ? (start_date.to_time.beginning_of_day + self.config['days_ahead'].to_i.days).end_of_day.iso8601 : self.config['end_date'].to_time.beginning_of_day.iso8601
 
     case calendar_source
     when 'google'
       if !client_key.empty?
         # ---------------------------------- google calendar api v3 via client api
-        require 'google/api_client'
+	require 'google/apis/calendar_v3'
 
-        client = Google::APIClient.new
-        client.authorization = nil
+	client = Google::Apis::CalendarV3::CalendarService.new
         client.key = client_key
         
-        cal = client.discovered_api('calendar', 'v3')
-
-        params = {}
-        params['calendarId'] = calendar_id
-        params['maxResults'] = self.config['max_results'] if !params['max_results'].blank?
-        params['singleEvents'] = true
-        params['orderBy'] = 'startTime'
-        params['fields'] = "description,items(description,end,endTimeUnspecified,location,organizer/displayName,source/title,start,status,summary,updated),summary,timeZone,updated"
-        params['timeMin'] = start_date
-        params['timeMax'] = end_date
-
-        tmp = client.execute(:api_method => cal.events.list, :parameters => params)
-
-        # convert to common data structure
-        result.error_message = tmp.error_message if tmp.error?
-        if !result.error?
-          result.name = tmp.data.summary
-          tmp.data.items.each do |item|
-            result.add_item(item.summary, item.description, item.location, item.start.dateTime, item.end.dateTime)
-          end
-        end
-      else
-        # ---------------------------------- public calendar via plain http
-        require 'net/http'
-        url = "http://www.google.com/calendar/feeds/#{calendar_id}/public/full?alt=json"
-        params = {}
-        params['max-results'] = self.config['max_results'] if !params['max_results'].blank?
-        params['singleevents'] = true
-        params['orderby'] = 'starttime'
-        params['start-min'] = start_date
-        params['start-max'] = end_date
-        url += params.collect { |k,v| "&#{k}=#{v}" }.join()
-
-        tmp = nil
         begin
-          json_data = Net::HTTP.get_response(URI.parse(url)).body
-          tmp = JSON.load(json_data)
-        rescue => e
-          result.error_message = e.message
-        end
+           tmp = client.list_events(calendar_id,
+                                 max_results: self.config['max_results'],
+                                 single_events: true,
+                                 order_by: 'startTime',
+                                 time_min: start_date)
 
         # convert to common data structure
+        #result.error_message = tmp.error_message if tmp.error?
+        rescue => e
+           result.error_message = e.message
+        end
         if !result.error?
-          result.name = tmp["feed"]["title"]["$t"]
-          tmp["feed"]["entry"].each do |item|
-            location = item["gd$where"].first["valueString"]
-            start_time = item["gd$when"].first["startTime"].to_time
-            end_time = item["gd$when"].first["endTime"].to_time
-            result.add_item(item["title"]["$t"], item["content"]["$t"], location, start_time, end_time)
+          result.name = tmp.summary
+          tmp.items.each do |item|
+            # All-day events aren't parsed as DateTime. Make it so.
+            starttime = item.start.date_time || Date.parse(item.start.date)
+            endtime = item.end.date_time || Date.parse(item.end.date)
+            result.add_item(item.summary, item.description, item.location, starttime, endtime)
           end
         end
       end
@@ -174,12 +145,23 @@ class Calendar < DynamicContent
             title = item.summary
             description = item.description
             location = item.location
-            item_start_time = item.dtstart.to_time unless item.dtstart.nil?
-            item_end_time = item.dtend.to_time unless item.dtend.nil?
+            # behave a little differently depending on whether or not our iCal has a timezone defined
+            # this behavior is somewhat lazy/sloppy in that we're assuming the existence of a defined timezone means
+            # that times are local ('correct'), whereas the absence of a timezone means the data is
+            # likely in UTC/Zulu time
+            if calendars.first.has_timezone?
+              item_start_time = item.dtstart.to_datetime unless item.dtstart.nil?
+              item_end_time = item.dtend.to_datetime unless item.dtend.nil?
+            else
+              item_start_time = Time.zone.parse(item.dtstart.to_s).to_datetime unless item.dtstart.nil?
+              item_end_time = Time.zone.parse(item.dtend.to_s).to_datetime unless item.dtend.nil?
+            end
+            item_end_time = nil if item_end_time == item_start_time
             # make sure the item's start date is within the specified range
             if item_start_time >= start_date && item_start_time < end_date
               result.add_item(title, description, location, item_start_time, item_end_time)
             end
+
           end
           result.items.sort! { |a, b| a.start_time <=> b.start_time }
           result.items = result.items[0..(max_results -1)]
@@ -200,7 +182,7 @@ class Calendar < DynamicContent
     html = []
     html << "<h1>#{item.name}</h1>"
     html << "<h2>#{item.start_time.strftime(day_format)}</h2>" 
-    html << (end_time.nil? ? "<div class=\"cal-time\">#{start_time}</div>" : "<div class=\"cal-time\">#{start_time} - #{end_time}</div>") unless start_time == end_time
+    html << (end_time.nil? || start_time == end_time ? "<div class=\"cal-time\">#{start_time}</div>" : "<div class=\"cal-time\">#{start_time} - #{end_time}</div>")
     html << "<div class=\"cal-location\">#{item.location}</div>"
     html << "<p>#{item.description}</p>"
     return html.join("")
@@ -225,7 +207,9 @@ class Calendar < DynamicContent
       start_time = item.start_time.strftime(time_format)
       end_time = item.end_time.strftime(time_format) unless item.end_time.nil?
 
-      html << (end_time.nil? ? "<dt>#{start_time}</dt>" : "<dt>#{start_time} - #{end_time}</dt>") unless start_time == end_time
+      html << (end_time.nil? || start_time == end_time ? "<dt>#{start_time}</dt>" : "<dt>#{start_time} - #{end_time}</dt>")
+      # if the item we're evaluating isn't a DateTime, it's a full-day event
+      html << (item.start_time.is_a?(DateTime) ? "" : "<dt>Time N/A</dt>")
       html << "<dd>#{item.name}</dd>"
       last_date = item.start_time.to_date
     end
