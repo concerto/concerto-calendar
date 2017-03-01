@@ -20,5 +20,4 @@ function attachHandlers() {
   $("input#calendar_config_end_date.datefield").datepicker();
 }
 
-$(document).ready(attachHandlers);
-$(document).on('page:change', attachHandlers);
+$(document).on('turbolinks:load', attachHandlers);
